@@ -5,6 +5,10 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs._
+import java.io._
+
 
 object CountryProfit {
   def main(args: Array[String]) {
@@ -22,6 +26,7 @@ object CountryProfit {
     val rddCurFields  = dataCur.map(r => r.split(",")).map(v => (v(0),v(1)))
 
     val mapCur = rddCurFields.collect().toMap
+
     /*
      * Convert currency to EUR according to currency.csv
      */
@@ -57,10 +62,26 @@ object CountryProfit {
     // union
     val profit = CountryBetTaxSum.union(CountryWinSum).reduceByKey((x,y) => x - y)
     //customerCountry.repartition(1).saveAsTextFile("output/cc1.csv")
-    val profitRepartCSV = profit.repartition(1).map{case (key, value) => Array(key, value).mkString(",")}
-    profitRepartCSV.saveAsTextFile("output/profiit1.csv")
+    val profitRepartCSV = profit.repartition(1).map{case (key, value) => Array(key, value).mkString(";")}
+
+    val rddBuf = "tmp/buffer"
+    FileUtil.fullyDelete(new File(rddBuf))
+    profitRepartCSV.saveAsTextFile(rddBuf)
 
 
+    /*
+     * Merge Hadoop fs to single file
+     */
+    def merge(srcPath: String, dstPath: String): Unit =  {
+      val hadoopConfig = new Configuration()
+      val hdfs = FileSystem.get(hadoopConfig)
+      FileUtil.copyMerge(hdfs, new Path(srcPath), hdfs, new Path(dstPath), false, hadoopConfig, null)
+    }
+
+    val destinationCSV= "output/net_country_profit.csv"
+    FileUtil.fullyDelete(new File(destinationCSV))
+
+    merge(rddBuf, destinationCSV)
 
 
 
