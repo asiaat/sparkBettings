@@ -5,6 +5,10 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs._
+import java.io._
+
 object CustomerBalance {
   def main(args: Array[String]){
 
@@ -45,7 +49,24 @@ object CustomerBalance {
 
     // multiple union
     val multiUnion = sc.union(deposit,withdraw,bet,win).reduceByKey((d,b) => d + b).sortByKey()
-    multiUnion.saveAsTextFile("output/credit4.csv")
+    val rddBuf = "tmp/buffer"
+    FileUtil.fullyDelete(new File(rddBuf))
+    val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, value).mkString(";")}
+    creditRepartCSV.saveAsTextFile(rddBuf)
+
+    /*
+     * Merge Hadoop fs to single file
+     */
+    def merge(srcPath: String, dstPath: String): Unit =  {
+      val hadoopConfig = new Configuration()
+      val hdfs = FileSystem.get(hadoopConfig)
+      FileUtil.copyMerge(hdfs, new Path(srcPath), hdfs, new Path(dstPath), false, hadoopConfig, null)
+    }
+
+    val destinationCSV= "output/customers_balance.csv"
+    FileUtil.fullyDelete(new File(destinationCSV))
+
+    merge(rddBuf, destinationCSV)
 
 
   }
