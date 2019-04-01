@@ -17,7 +17,7 @@ object CustomerBalance {
     val sc   = new SparkContext(conf)
 
     val header_tx     = "transaction_id,customerid,currency,amount,transaction_type"
-    val dataTx        = sc.textFile("input/transactions.csv").filter(l => l != header_tx )
+    val dataTx        = sc.textFile("input/transactions.csv").filter(l => l != header_tx ).distinct()
     val rddTxFields   = dataTx.map(r => r.split(",")).map(f => (f(1),f(3),f(4).toFloat,f(5)))
 
     val header_cur    = "currency_symbol,currency_rate"
@@ -37,6 +37,12 @@ object CustomerBalance {
       return conv
     }
 
+    def rndBy(x: Double) = {
+      val w = math.pow(10, 4)
+      (x * w).toLong.toDouble / w
+    }
+
+
     // whole data with converted currency
     val rddTxConv = rddTxFields.map(f => (f._1,convertCur(f._2,f._3.toFloat),f._4 ))
 
@@ -51,7 +57,7 @@ object CustomerBalance {
     val multiUnion = sc.union(deposit,withdraw,bet,win).reduceByKey((d,b) => d + b).sortByKey()
     val rddBuf = "tmp/buffer"
     FileUtil.fullyDelete(new File(rddBuf))
-    val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, value, java.time.LocalDateTime.now).mkString(";")}
+    val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, rndBy(value), java.time.LocalDateTime.now).mkString(";")}
     creditRepartCSV.saveAsTextFile(rddBuf)
 
     /*
