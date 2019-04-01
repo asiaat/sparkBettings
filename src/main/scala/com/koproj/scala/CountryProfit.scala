@@ -5,6 +5,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
+
 object CountryProfit {
   def main(args: Array[String]) {
 
@@ -55,7 +56,10 @@ object CountryProfit {
 
     // union
     val profit = CountryBetTaxSum.union(CountryWinSum).reduceByKey((x,y) => x - y)
-    profit.saveAsTextFile("output/profit.csv")
+    //customerCountry.repartition(1).saveAsTextFile("output/cc1.csv")
+    val profitRepartCSV = profit.repartition(1).map{case (key, value) => Array(key, value).mkString(",")}
+    profitRepartCSV.saveAsTextFile("output/profiit1.csv")
+
 
 
 
