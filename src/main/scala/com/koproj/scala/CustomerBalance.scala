@@ -51,7 +51,7 @@ object CustomerBalance {
     val multiUnion = sc.union(deposit,withdraw,bet,win).reduceByKey((d,b) => d + b).sortByKey()
     val rddBuf = "tmp/buffer"
     FileUtil.fullyDelete(new File(rddBuf))
-    val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, value).mkString(";")}
+    val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, value, java.time.LocalDateTime.now).mkString(";")}
     creditRepartCSV.saveAsTextFile(rddBuf)
 
     /*

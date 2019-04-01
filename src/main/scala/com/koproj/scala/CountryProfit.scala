@@ -62,7 +62,7 @@ object CountryProfit {
     // union
     val profit = CountryBetTaxSum.union(CountryWinSum).reduceByKey((x,y) => x - y)
     //customerCountry.repartition(1).saveAsTextFile("output/cc1.csv")
-    val profitRepartCSV = profit.repartition(1).map{case (key, value) => Array(key, value).mkString(";")}
+    val profitRepartCSV = profit.repartition(1).map{case (key, value) => Array(key, value,java.time.LocalDateTime.now).mkString(";")}
 
     val rddBuf = "tmp/buffer"
     FileUtil.fullyDelete(new File(rddBuf))
