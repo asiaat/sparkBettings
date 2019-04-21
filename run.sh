@@ -1,0 +1,1 @@
+/usr/local/spark/bin/./spark-submit --class com.koproj.scala.CustomerBalance --master local target/sparkBettings-1.0-SNAPSHOT.jar

@@ -2,3 +2,6 @@ output/
 .idea/
 *.jar
 *.class
+target/
+tmp/
+
