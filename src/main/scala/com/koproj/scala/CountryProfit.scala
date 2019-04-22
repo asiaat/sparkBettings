@@ -23,24 +23,17 @@ object CountryProfit {
 
     val header_cur    = "currency_symbol,currency_rate"
     val dataCur       = sc.textFile("input/currency.csv").filter(l => l != header_cur )
-    val rddCurFields  = dataCur.map(r => r.split(",")).map(v => (v(0),v(1)))
+    val rddCurFields  = dataCur.map(r => r.split(",")).map(v => (v(0),v(1).toFloat))
 
     val mapCur = rddCurFields.collect().toMap
 
     /*
      * Convert currency to EUR according to currency.csv
      */
-    def convertCur( a:String, b:Float ) : Float = {
-      var conv:Float = 0
-
-      // calculation
-      conv = b / mapCur(a).toFloat
-
-      return conv
-    }
+    def convertCur( a:String, b:Float, m:Map[String,Float]) : Float = b / m(a)
 
     // whole data with converted currency
-    val rddTxConv = rddTxFields.map(f => (f._1,(convertCur(f._2,f._3.toFloat),f._4 )))
+    val rddTxConv = rddTxFields.map(f => (f._1,(convertCur(f._2,f._3.toFloat,mapCur),f._4 )))
 
     // customer and country
     val customer_header = "customerid,hashed_name,registration_date,country_code"
