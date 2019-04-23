@@ -4,10 +4,13 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import java.io._
+
+import com.koproj.scala.MoneyConv
+
+
 
 object CustomerBalance {
   def main(args: Array[String]){
@@ -26,10 +29,6 @@ object CustomerBalance {
 
     val mapCur = rddCurFields.collect().toMap
 
-    /*
-     * Convert currency to EUR according to currency.csv
-     */
-    def convertCur( a:String, b:Float, m:Map[String,Float]) : Float = b / m(a)
 
     def rndBy(x: Double) = {
       val w = math.pow(10, 4)
@@ -38,7 +37,8 @@ object CustomerBalance {
 
 
     // whole data with converted currency
-    val rddTxConv = rddTxFields.map(f => (f._1,convertCur(f._2,f._3.toFloat,mapCur),f._4 ))
+    val moncv = new MoneyConv(mapCur)
+    val rddTxConv = rddTxFields.map(f => (f._1,moncv.toEUR(f._2,f._3.toFloat),f._4 ))
 
     // Filter Tx types
     // and give the direction etc. adding - is reducing balance

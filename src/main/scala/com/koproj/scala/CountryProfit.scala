@@ -4,10 +4,11 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import java.io._
+
+import com.koproj.scala.MoneyConv
 
 
 object CountryProfit {
@@ -27,13 +28,9 @@ object CountryProfit {
 
     val mapCur = rddCurFields.collect().toMap
 
-    /*
-     * Convert currency to EUR according to currency.csv
-     */
-    def convertCur( a:String, b:Float, m:Map[String,Float]) : Float = b / m(a)
-
     // whole data with converted currency
-    val rddTxConv = rddTxFields.map(f => (f._1,(convertCur(f._2,f._3.toFloat,mapCur),f._4 )))
+    val moncv = new MoneyConv(mapCur)
+    val rddTxConv = rddTxFields.map(f => (f._1,(moncv.toEUR(f._2,f._3.toFloat),f._4 )))
 
     // customer and country
     val customer_header = "customerid,hashed_name,registration_date,country_code"
