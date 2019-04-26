@@ -29,7 +29,9 @@ object CountryProfit {
     val mapCur = rddCurFields.collect().toMap
 
     // whole data with converted currency
-    val moncv = new MoneyConv(mapCur)
+    val moncv = new MoneyConv()
+    moncv.readCSV()
+
     val rddTxConv = rddTxFields.map(f => (f._1,(moncv.toEUR(f._2,f._3.toFloat),f._4 )))
 
     // customer and country

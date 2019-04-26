@@ -35,10 +35,12 @@ object CustomerBalance {
       (x * w).toLong.toDouble / w
     }
 
-
     // whole data with converted currency
-    val moncv = new MoneyConv(mapCur)
+    val moncv = new MoneyConv()
+    moncv.readCSV()
+
     val rddTxConv = rddTxFields.map(f => (f._1,moncv.toEUR(f._2,f._3.toFloat),f._4 ))
+
 
     // Filter Tx types
     // and give the direction etc. adding - is reducing balance
@@ -53,6 +55,9 @@ object CustomerBalance {
     FileUtil.fullyDelete(new File(rddBuf))
     val creditRepartCSV = multiUnion.repartition(1).map{case (key, value) => Array(key, rndBy(value), java.time.LocalDateTime.now).mkString(";")}
     creditRepartCSV.saveAsTextFile(rddBuf)
+
+
+    val outMngr = new OutputMngr()
 
     /*
      * Merge Hadoop fs to single file
